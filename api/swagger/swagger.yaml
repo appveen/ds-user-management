@@ -2463,6 +2463,33 @@ paths:
           description: No results to list with the given parameter set.
         '500':
           description: Internal server error
+    put:
+      description: Update an App
+      operationId: AppUpdate
+      parameters:
+      - name: authorization
+        in: header
+        type: string
+        description: The JWT token for req. validation
+      - name: data
+        in: body
+        description: Payload to update a Doamin
+        schema:
+          $ref: '#/definitions/Appcreate'
+      - name: id
+        in: path
+        type: string
+        required: true
+        description: Id of the User to be updated
+      responses:
+        '200':
+          description: List of the entites
+        '400':
+          description: Bad parameters
+        '404':
+          description: No results to list with the given parameter set.
+        '500':
+          description: Internal server error
   /data/app:
     x-swagger-router-controller: controller
     get:
@@ -3165,49 +3192,49 @@ definitions:
         type: [array, "null"]
         items:
           type: object        
-  Rolescreate:
-    required:
-    - entity
-    - app
-    properties:
-      description:
-        type: string
-      app:
-        type: string
-      entity:
-        type: string
-      entityName:
-        type: string
-      fields:
-        type: [string, 'null']
-  azureCode:
-    type: object      
-  ldap:
-    properties:
-      url:
-        type: [string, 'null']
-      bindDN:
-        type: [string, 'null']
-      bindPassword:
-        type: [string, 'null']
-      baseDN:
-        type: [string, 'null']
-      baseFilter:
-        type: [string, 'null']
-      mapping:
-        type: [object, 'null']
-      admin:
-        type: [string, 'null']
-      searchText:
-        type: [string, 'null']
-      user:
-        type: [object, 'null']
-      clientId:
-        type: [string, 'null']
-      clientSecret:
-        type: [string, 'null']
-      tenant:
-        type: [string, 'null']  
+  # Rolescreate:
+  #   required:
+  #   - entity
+  #   - app
+  #   properties:
+  #     description:
+  #       type: string
+  #     app:
+  #       type: string
+  #     entity:
+  #       type: string
+  #     entityName:
+  #       type: string
+  #     fields:
+  #       type: [string, 'null']
+  # azureCode:
+  #   type: object      
+  # ldap:
+  #   properties:
+  #     url:
+  #       type: [string, 'null']
+  #     bindDN:
+  #       type: [string, 'null']
+  #     bindPassword:
+  #       type: [string, 'null']
+  #     baseDN:
+  #       type: [string, 'null']
+  #     baseFilter:
+  #       type: [string, 'null']
+  #     mapping:
+  #       type: [object, 'null']
+  #     admin:
+  #       type: [string, 'null']
+  #     searchText:
+  #       type: [string, 'null']
+  #     user:
+  #       type: [object, 'null']
+  #     clientId:
+  #       type: [string, 'null']
+  #     clientSecret:
+  #       type: [string, 'null']
+  #     tenant:
+  #       type: [string, 'null']  
   Bots:
     properties:
       isActive:
