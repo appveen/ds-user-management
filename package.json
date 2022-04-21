@@ -17,7 +17,7 @@
   "author": "Shobhit Agrawal <shobhit@appveen.com>",
   "license": "ISC",
   "dependencies": {
-    "@appveen/data.stack-utils": "^1.0.19",
+    "@appveen/data.stack-utils": "github:appveen/data.stack-utils",
     "@appveen/ds-auth-cache": "github:appveen/ds-auth-cache",
     "@appveen/swagger-mongoose-crud": "1.2.6",
     "@appveen/utils": "^2.1.4",
