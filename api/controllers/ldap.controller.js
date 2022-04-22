@@ -8,7 +8,7 @@
 // TBD
 
 // function testAuth(req, res) {
-// 	let auth = req.swagger.params.auth.value;
+// 	let auth = req.params.auth.value;
 // 	if (auth === 'ldap') {
 // 		return testMapping(req, res);
 // 	} else if (auth === 'azure') {
@@ -53,7 +53,7 @@
 // }
 
 // function authorizationRequestCallback(req, res) {
-// 	let code = req.swagger.params.code.value;
+// 	let code = req.params.code.value;
 // 	return azureAdUtil.requestAccessCode(code, 'userFetch')
 // 		.then(accToken => {
 // 			let client = MicrosoftGraph.Client.init({
@@ -302,7 +302,7 @@
 // TBDL
 // function getConnectionDetails(req) {
 // 	if (req.user && req.user.auth && req.user.auth.isLdap) {
-// 		let auth = req.swagger.params.auth.value;
+// 		let auth = req.params.auth.value;
 // 		return mongoose.model('config').findOne({ 'auth.mode': auth }).lean(true)
 // 			.then(_cf => {
 // 				let usrDN = req.user && req.user.auth && req.user.auth.dn ? req.user.auth.dn : null;
@@ -344,7 +344,7 @@
 // }
 
 // function searchUsers(req, res) {
-// 	let auth = req.swagger.params.auth.value;
+// 	let auth = req.params.auth.value;
 // 	if (auth === 'azure' && envConfig.RBAC_USER_AUTH_MODES.includes('azure')) {
 // 		return getUsersFromAD(req, res);
 // 	} else if((auth === 'ldap' && envConfig.RBAC_USER_AUTH_MODES.includes('ldap'))) {
@@ -577,7 +577,7 @@
 // }
 
 // function saveConnection(req, res) {
-// 	let auth = req.swagger.params.auth.value;
+// 	let auth = req.params.auth.value;
 // 	if (auth === 'ldap') {
 // 		switchToLdap(req, res);
 // 	} else if (auth === 'azure') {

@@ -1,4 +1,7 @@
-FROM node:14-alpine
+FROM node:14.19.0-alpine3.15
+
+RUN apk update
+RUN apk upgrade
 
 RUN set -ex; apk add --no-cache --virtual .fetch-deps curl tar git openssl ;
 
@@ -7,6 +10,7 @@ WORKDIR /app
 COPY package.json /app
 
 RUN npm install --production
+RUN npm audit fix
 
 COPY api /app/api
 

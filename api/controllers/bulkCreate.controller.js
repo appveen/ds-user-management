@@ -18,8 +18,8 @@ var options = {
 var crudder = new SMCrud(schema, 'bulkCreate', options);
 
 function modifyFilterForBulkCreate(req) {
-	let filter = req.swagger.params.filter.value;
-	let fileId = req.swagger.params.fileId.value;
+	let filter = req.query.filter;
+	let fileId = req.params.fileId;
 	if (filter && typeof filter === 'string') {
 		filter = JSON.parse(filter);
 	}
@@ -30,7 +30,7 @@ function modifyFilterForBulkCreate(req) {
 			fileId
 		};
 	}
-	req.swagger.params.filter.value = JSON.stringify(filter);
+	req.query.filter = JSON.stringify(filter);
 }
 
 function bulkUserIndex(req, res) {

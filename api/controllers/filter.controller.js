@@ -93,7 +93,7 @@ function customIndex(req, res) {
 }
 
 function customUpdate(req, res) {
-	let id = req.swagger.params.id.value;
+	let id = req.params.id;
 	let user = req.headers.user;
 	let userDatails = req.user;
 	crudder.model.findOne({ '_id': id })

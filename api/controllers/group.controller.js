@@ -217,8 +217,8 @@ function customUpdate(req, res) {
 }
 
 function modifyFilterForApp(req) {
-	let filter = req.swagger.params.filter.value;
-	let app = req.swagger.params.app.value;
+	let filter = req.query.filter;
+	let app = req.params.app;
 	if (filter && typeof filter === 'string') {
 		filter = JSON.parse(filter);
 	}
@@ -227,7 +227,7 @@ function modifyFilterForApp(req) {
 	} else {
 		filter = { app };
 	}
-	req.swagger.params.filter.value = JSON.stringify(filter);
+	req.query.filter = JSON.stringify(filter);
 }
 
 function modifyBodyForApp(req) {

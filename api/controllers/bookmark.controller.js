@@ -76,8 +76,8 @@ var crudder = new SMCrud(schema, 'bookmark', options);
 var e = {};
 
 function modifyFilterForBookmark(req) {
-	let filter = req.swagger.params.filter.value;
-	let app = req.swagger.params.app.value;
+	let filter = req.query.filter;
+	let app = req.params.app;
 	if (filter && typeof filter === 'string') {
 		filter = JSON.parse(filter);
 	}
@@ -88,7 +88,7 @@ function modifyFilterForBookmark(req) {
 			app
 		};
 	}
-	req.swagger.params.filter.value = JSON.stringify(filter);
+	req.query.filter = JSON.stringify(filter);
 }
 
 e.customCount = (req, res) => {
@@ -102,7 +102,7 @@ e.customIndex = (req, res) => {
 };
 
 function checkApp(req) {
-	let appParam = req.swagger.params.app.value;
+	let appParam = req.params.app.value;
 	let appBody = req.body.app;
 	return appParam == appBody;
 }
@@ -117,7 +117,7 @@ e.customUpdate = (req, res) => {
 e.customDestroy = (req, res) => {
 	crudder.destroy(req, res)
 		.then(() => {
-			let bm = req.swagger.params.id.value;
+			let bm = req.params.id;
 			let bmDelete = 'BM_' + bm;
 			return mongoose.model('group').find({ 'roles.entity': bmDelete })
 				.then(docs => {
@@ -142,7 +142,7 @@ e.customDestroy = (req, res) => {
 };
 
 e.bulkDestroy = (req, res) => {
-	let bm = req.swagger.params.id.value;
+	let bm = req.params.id;
 	bm = bm.split(',');
 	let bookm = bm.map(k => 'BM_' + k);
 	return mongoose.model('group').find({ 'roles.entity': { $in: bookm } })

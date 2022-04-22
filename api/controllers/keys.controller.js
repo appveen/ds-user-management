@@ -78,7 +78,7 @@ async function customShow(req, res) {
 	try {
 		const keys = {};
 		keys.encryptionKey = config.encryptionKey;
-		const app = req.swagger.params.app.value;
+		const app = req.params.app;
 		const doc = await crudder.model.findOne({ app }).lean();
 		keys.baseKey = doc.key;
 		keys.baseCert = doc.certificate;

@@ -881,10 +881,95 @@ function handleSessionAndGenerateToken(_req, _res, user, botKey, isHtml) {
 	});
 }
 
+//to be deleted
+// function loginCallbackAzure(req, res) {
+// 	let code = req.params.code;
+// 	let usr = null;
+// 	let configADAttr = null;
+// 	return mongoose.model('config').findOne({
+// 		'configType': 'auth',
+// 		'auth.class': 'AD',
+// 		'auth.mode': 'azure',
+// 		'auth.enabled': true
+// 	})
+// 		.then(_d => {
+// 			if (!_d) throw new Error('Config is not AzureAD.');
+// 			configADAttr = _d && _d.auth && _d.auth.connectionDetails && _d.auth.connectionDetails && _d.auth.connectionDetails.adUsernameAttribute ? _d.auth.connectionDetails.adUsernameAttribute : 'mail';
+// 			return azureAdUtil.requestAccessCode(code, 'login');
+// 		})
+// 		.then(accToken => {
+// 			let client = MicrosoftGraph.Client.init({
+// 				authProvider: (done) => {
+// 					done(null, accToken);
+// 				}
+// 			});
+// 			return client
+// 				.api('/me')
+// 				.get((err, result) => {
+// 					logger.debug(JSON.stringify({
+// 						result
+// 					}));
+// 					if (err) {
+// 						return res.end(`<script>
+//     window.parent.localStorage.setItem('azure-status','500');
+//     window.parent.localStorage.setItem('azure-body','${JSON.stringify({ message: err.message })}');
+//     window.close();
+//     </script>`);
+// 						// return res.status(500).json({ message: err.message });
+// 					}
+// 					if (!result[configADAttr]) {
+// 						return res.end(`<script>
+//     window.parent.localStorage.setItem('azure-status','400');
+//     window.parent.localStorage.setItem('azure-body','${JSON.stringify({ message: `User ${configADAttr} not found.` })}');
+//     window.close();
+//     </script>`);
+// 						// return res.status(400).json({ message: 'User mail not found' });
+// 					}
+// 					let usernameRegex = new RegExp('^' + result[configADAttr] + '$', 'i');
+// 					crudder.model.findOne({
+// 						_id: usernameRegex
+// 					})
+// 						.then(_usr => {
+// 							if (!_usr) {
+// 								res.end(`<script>
+//     window.parent.localStorage.setItem('azure-status','400');
+//     window.parent.localStorage.setItem('azure-body','${JSON.stringify({ message: 'username ' + result[configADAttr] + ' not found' })}');
+//     window.close();
+//     </script>`);
+// 							}
+// 							usr = _usr;
+// 							if (envConfig.RBAC_USER_TO_SINGLE_SESSION && !usr.bot) {
+// 								return cacheUtil.checkUser(`U:${usr._id}`);
+// 							}
+// 							return null;
+// 						})
+// 						.then((_d) => {
+// 							if (envConfig.RBAC_USER_TO_SINGLE_SESSION && _d) {
+// 								return cacheUtil.removeUser(`U:${usr._id}`);
+// 							}
+// 						})
+// 						.then(() => {
+// 							return getLoginUserdoc(usr);
+// 						})
+// 						.then(_d => generateToken(_d, res, false, true))
+// 						.catch(err => {
+// 							res.status(500).json({
+// 								'message': err.message
+// 							});
+// 						});
+// 				});
+// 		})
+// 		.catch(err => {
+// 			res.status(500).json({
+// 				message: err.message
+// 			});
+// 		});
+// }
 
 function updatePassword(request, response) {
-	var credentials = crudder.swagMapper(request)['data'];
-	let id = request.swagger.params.id.value;
+	// var credentials = crudder.swagMapper(request)['data'];
+	var credentials = request.body;
+	let id = request.params.id;
 	let usrDoc = null;
 	crudder.model.findOne({
 		'_id': id
@@ -945,7 +1030,7 @@ function updatePassword(request, response) {
 function resetPassword(req, res) {
 	var credentials = req.body;
 	let userDoc = null;
-	let id = req.swagger.params.id.value;
+	let id = req.params.id;
 	if (credentials.password == credentials.cpassword) {
 		let result = checkPassword(credentials.password);
 		if (result.success) {
@@ -1407,9 +1492,9 @@ function init() {
 var crudder = new SMCrud(schema, 'user', options);
 
 function modifyFilter(req) {
-	let apps = req.swagger.params.apps.value ? req.swagger.params.apps.value.split(',') : [];
+	let apps = req.params.apps ? req.params.apps.split(',') : [];
 	if (!apps.length) return Promise.resolve();
-	let filter = req.swagger.params.filter.value;
+	let filter = req.query.filter;
 	if (filter && typeof filter === 'string') {
 		filter = JSON.parse(filter);
 	}
@@ -1441,12 +1526,12 @@ function modifyFilter(req) {
 					}]
 				};
 			}
-			req.swagger.params.filter.value = JSON.stringify(filter);
+			req.query.filter = JSON.stringify(filter);
 		});
 }
 function customIndex(_req, _res) {
 	let omitKeys = ['-salt', '-password'];
-	let select = _req.swagger.params.select.value ? _req.swagger.params.select.value.split(',') : [];
+	let select = _req.query.select ? _req.query.select.split(',') : [];
 	let _idIndex = select.indexOf('-_id');
 	if (_idIndex > -1) select.splice(_idIndex, 1);
 	if (select.indexOf('password') > -1) select.splice(select.indexOf('password'), 1);
@@ -1454,8 +1539,8 @@ function customIndex(_req, _res) {
 	if (select.length == 0) select = select.concat(omitKeys);
 	_idIndex > -1 ? select.push('-_id') : null;
 	select = select.join(',');
-	_req.swagger.params.select.value = select;
-	let apps = _req.swagger.params.apps.value;
+	_req.query.select = select;
+	let apps = _req.params.apps;
 	if (apps) {
 		return modifyFilter(_req).then(() => crudder.index(_req, _res));
 	}
@@ -1463,7 +1548,7 @@ function customIndex(_req, _res) {
 }
 
 function customCount(_req, _res) {
-	let apps = _req.swagger.params.apps.value;
+	let apps = _req.params.apps;
 	if (apps) {
 		return modifyFilter(_req).then(() => crudder.count(_req, _res));
 	}
@@ -1482,7 +1567,7 @@ function customUpdate(req, res) {
 	}
 	let oldValues = null;
 	let updated = null;
-	let id = req.swagger.params.id.value;
+	let id = req.params.id;
 	if (req.body.username && req.body.username != id) {
 		return res.status(400).json({
 			message: 'Username cannot be changed.'
@@ -1573,7 +1658,7 @@ function customCreate(req, res) {
 function createBotKey(req, res) {
 	let data = req.body;
 	let uuid = cacheUtil.uuid();
-	let botId = req.swagger.params.id.value;
+	let botId = req.params._id;
 	let resKeyValue = '';
 	let botData;
 	//condition based -
@@ -1630,7 +1715,7 @@ function endSessionForBotKey(botId, keyId) {
 }
 
 function endBotKeySession(req, res) {
-	let botId = req.swagger.params.id.value;
+	let botId = req.params._id;
 	let data = req.body;
 	if (!data || !data.keyId) return res.status(500).json({
 		message: 'Please provide the Bot\'s keyId'
@@ -1665,7 +1750,7 @@ function endSessionForUser(userObject) {
 
 function updateBotKey(req, res) {
 	let data = req.body;
-	let botId = req.swagger.params.id.value;
+	let botId = req.params._id;
 	let responseObj = null;
 	let endSessionFlag = false;
 	if (data.keyValue) {
@@ -1715,9 +1800,9 @@ function updateBotKey(req, res) {
 }
 
 function disableUser(req, res) {
-	let botId = req.swagger.params.id.value;
-	let status = (req.swagger.params.userState.value === 'enable') ? true : false;
-	let isBot = (req.swagger.params.userType.value === 'bot') ? true : false;
+	let botId = req.params._id;
+	let status = (req.params.userState === 'enable') ? true : false;
+	let isBot = (req.params.userType === 'bot') ? true : false;
 	let responseObj = null;
 	return crudder.model.findOne({
 		'_id': botId,
@@ -1762,7 +1847,7 @@ botId - path
 }
 */
 function deleteBotKey(req, res) {
-	let botId = req.swagger.params.id.value;
+	let botId = req.params._id;
 	return crudder.model.findOne({
 		'_id': botId,
 		'bot': true,
@@ -1793,10 +1878,10 @@ function deleteBotKey(req, res) {
 }
 
 function getRolesList(req, res) {
-	let searchText = req.swagger.params.text.value;
-	let id = req.swagger.params.id.value;
-	let idType = req.swagger.params.idType.value;
-	let entity = req.swagger.params.entity.value;
+	let searchText = req.params.text;
+	let id = req.params.id;
+	let idType = req.params.idType;
+	let entity = req.params.entity;
 	let regex = new RegExp(searchText, 'i');
 	let promise = null;
 	if (id && idType === 'user') promise = crudder.model.findOne({
@@ -1885,7 +1970,7 @@ function getRolesList(req, res) {
 }
 
 function getRolesType(req, res) {
-	let usrId = req.swagger.params.id.value;
+	let usrId = req.params.userId;
 	let oprtns;
 	let CUD = 0,
 		view = 0;
@@ -1979,9 +2064,9 @@ async function logout(req, res) {
 }
 
 function getAllRolesofUser(req, res) {
-	let id = req.swagger.params.id.value;
+	let id = req.params.id;
 	let user = null;
-	let filter = req.swagger.params.filter.value;
+	let filter = req.query.filter;
 	try {
 		if (filter && typeof filter == 'string') filter = JSON.parse(filter);
 	} catch (err) {
@@ -2056,7 +2141,7 @@ function getAllRolesofUser(req, res) {
 
 async function authType(req, res) {
 	try {
-		let username = req.swagger.params.id.value;
+		let username = req.params.id;
 		let resObj = {};
 		const user = await crudder.model.findOne({ _id: username }).lean();
 		if (!user) {
@@ -2095,7 +2180,7 @@ function getAppList(usrId) {
 }
 
 function getUserAppList(req, res) {
-	let usrId = req.swagger.params.id.value;
+	let usrId = req.params.usrId;
 	let requestingUsrId = req.user ? req.user._id : null;
 	let requestingUsrIdApps = null;
 	if (req.user.isSuperAdmin) {
@@ -2132,7 +2217,7 @@ function getUserAppList(req, res) {
 
 function createUserinGroups(req, res) {
 	let groups = req.body.groups;
-	let app = req.swagger.params.app.value;
+	let app = req.params.app;
 	let createdUser = null;
 	let UserModel = crudder.model;
 	// console.log(JSON.stringify(req.body));
@@ -2215,7 +2300,7 @@ function createUserinGroups(req, res) {
 }
 
 function addUserToGroups(req, res) {
-	let usrId = req.swagger.params.id.value;
+	let usrId = req.params.usrId;
 	let groups = req.body.groups;
 	let groupDocs = null;
 	let data = null;
@@ -2262,7 +2347,7 @@ function addUserToGroups(req, res) {
 }
 
 function removeUserFromGroups(req, res) {
-	let usrId = req.swagger.params.id.value;
+	let usrId = req.params.usrId;
 	let groups = req.body.groups;
 	return mongoose.model('group').find({
 		_id: {
@@ -2295,7 +2380,7 @@ function removeUserFromGroups(req, res) {
 }
 
 function editAppAdmin(req, res) {
-	let userId = req.swagger.params.id.value;
+	let userId = req.params.userId;
 	logger.debug(`Requested userID : ${userId}`);
 	if (req.user._id === userId) {
 		return res.status(400).json({
@@ -2305,7 +2390,7 @@ function editAppAdmin(req, res) {
 	logger.debug(`Requested apps : ${JSON.stringify(req.body.apps)}`);
 	let apps = req.body.apps;
 	let docs = null;
-	let action = req.swagger.params.action.value;
+	let action = req.params.action;
 	let userData;
 	logger.debug(`Requested action : ${action}`);
 	return crudder.model.findOne({
@@ -2358,7 +2443,7 @@ function editAppAdmin(req, res) {
 		.then(_d => {
 			docs = _d;
 			return crudder.model.findOne({
-				_id: req.swagger.params.id.value
+				_id: req.params.userId
 			});
 		})
 		.then(data => {
@@ -2383,8 +2468,8 @@ function editAppAdmin(req, res) {
 }
 
 function editSuperAdmin(req, res) {
-	let userId = req.swagger.params.id.value;
-	let action = req.swagger.params.action.value;
+	let userId = req.params.userId;
+	let action = req.params.action;
 	let allApps = [];
 	let diff = [];
 	let promise = null;
@@ -2459,7 +2544,7 @@ function editSuperAdmin(req, res) {
 		})
 		.then(() => {
 			return crudder.model.findOne({
-				_id: req.swagger.params.id.value
+				_id: req.params.userId
 			});
 		})
 		.then(data => {
@@ -2510,14 +2595,14 @@ function customDestroy(req, res) {
 	if (!req.user.isSuperAdmin) return res.status(403).json({
 		message: 'Current user does not have permission to delete user'
 	});
-	if (req.swagger.params.id.value === req.user._id) return res.status(403).json({
+	if (req.params.id === req.user._id) return res.status(403).json({
 		message: 'User cannot delete itself'
 	});
-	return getAppList(req.swagger.params.id.value)
+	return getAppList(req.params.id)
 		.then(apps => {
 			apps = _.uniq(apps);
 			let usrIds = [];
-			usrIds.push(req.swagger.params.id.value);
+			usrIds.push(req.params.id);
 			let pr = [];
 			pr = apps.map(app => {
 				return appController.validateUser(req, usrIds, app);
@@ -2537,13 +2622,13 @@ function customDestroy(req, res) {
 		})
 		.then(() => {
 			return crudder.model.findOne({
-				_id: req.swagger.params.id.value
+				_id: req.params.id
 			});
 		})
 		.then(data => {
 			userDoc = data;
 			return mongoose.model('group').find({
-				'users': req.swagger.params.id.value
+				'users': req.params.id
 			}, 'app');
 		})
 		.then(_grps => {
@@ -2554,7 +2639,7 @@ function customDestroy(req, res) {
 				$and: [{
 					'private': true
 				}, {
-					'createdBy': req.swagger.params.id.value
+					'createdBy': req.params.id
 				}]
 			});
 		})
@@ -2564,7 +2649,7 @@ function customDestroy(req, res) {
 		.then(() => {
 			let pr = [];
 			let usrIds = [];
-			usrIds.push(req.swagger.params.id.value);
+			usrIds.push(req.params.id);
 			pr = apps.map(app => {
 				return appController.deleteUserDoc(req, usrIds, app);
 			});
@@ -2583,7 +2668,7 @@ function customDestroy(req, res) {
 
 async function closeAllSessionForUser(req, res) {
 	try {
-		let userId = req.swagger.params.id.value;
+		let userId = req.params.id;
 		const status = await cache.endSession(userId);
 		await cacheUtil.removeUser(`U:${userId}`);
 		logger.debug('Cache remove user');
@@ -2602,7 +2687,7 @@ async function closeAllSessionForUser(req, res) {
 }
 
 function addUserToApps(req, res) {
-	let usrId = req.swagger.params.id.value;
+	let usrId = req.params.usrId;
 	let apps = req.body.apps;
 	crudder.model.findOne({
 		_id: usrId
@@ -2652,7 +2737,7 @@ function bulkAddUserValidate(_req, _res) {
 	let isHeaderProvided = data.fileHeaders;
 	let headerMapping = data.headerMapping;
 	let fileName = data.fileName;
-	let fileId = _req.swagger.params.fileId.value;
+	let fileId = _req.params.fileId;
 	let collectionName = 'userMgmt.users';
 	getSheetDataFromGridFS(fileId, mongoose.connection.db, collectionName)
 		.then((bufferData) => {
@@ -2968,7 +3053,7 @@ function bulkAddUserCreate(_req, _res) {
 }
 
 function bulkAddUserDownload(_req, _res) {
-	let fileId = _req.swagger.params.fileId.value;
+	let fileId = _req.params.fileId;
 	let newDir = './downloads/' + fileId + '.csv';
 	let header = 'Sno, Username, Name, Phone, Status, Conflict, Error message\n';
 	fs.writeFileSync(newDir, header, function (err) {
@@ -2996,8 +3081,8 @@ function bulkAddUserDownload(_req, _res) {
 }
 
 function importUserToApp(req, res) {
-	let username = req.swagger.params.id.value;
-	let apps = req.body.apps || [req.swagger.params.app.value];
+	let username = req.params.username;
+	let apps = req.params.apps;
 	let groups = req.body.groups;
 	let usrdoc = null;
 	let usernameRegex = new RegExp('^' + username + '$', 'i');
@@ -3085,8 +3170,8 @@ function importUserToApp(req, res) {
 
 
 function modifyFilterForApp(req, isBot) {
-	let filter = req.swagger.params.filter.value;
-	let app = req.swagger.params.app.value;
+	let filter = req.query.filter;
+	let app = req.params.app;
 	if (filter && typeof filter === 'string') {
 		filter = JSON.parse(filter);
 	}
@@ -3120,7 +3205,7 @@ function modifyFilterForApp(req, isBot) {
 					}]
 				};
 			}
-			req.swagger.params.filter.value = JSON.stringify(filter);
+			req.query.filter = JSON.stringify(filter);
 		});
 }
 
@@ -3138,8 +3223,8 @@ function userInApp(req, res) {
 }
 
 function userInAppShow(req, res) {
-	const app = req.swagger.params.app.value.trim();
-	const userId = req.swagger.params.id.value.trim();
+	const app = req.params.app.trim();
+	const userId = req.params.id.trim();
 	mongoose.model('group').find({ app: app, users: userId }).lean().then(groups => {
 		if (groups && groups.length > 0) {
 			return crudder.show(req, res);
@@ -3154,10 +3239,10 @@ function userInAppShow(req, res) {
 }
 
 function modifyFilterForGroup(req) {
-	let filter = req.swagger.params.filter.value;
-	let group = req.swagger.params.id.value;
-	let app = req.swagger.params.app.value;
-	let botFlag = req.swagger.params.usrType.value == 'bot' ? true : false;
+	let filter = req.query.filter;
+	let group = req.params.groupId;
+	let app = req.params.app;
+	let botFlag = req.params.usrType == 'bot' ? true : false;
 	if (filter && typeof filter === 'string') {
 		filter = JSON.parse(filter);
 	}
@@ -3183,7 +3268,7 @@ function modifyFilterForGroup(req) {
 					}
 				};
 			}
-			req.swagger.params.filter.value = JSON.stringify(filter);
+			req.query.filter = JSON.stringify(filter);
 		});
 }
 
@@ -3293,7 +3378,7 @@ function health(req, res) {
 }
 
 function distinctUserAttribute(req, res) {
-	let app = req.swagger.params.app.value;
+	let app = req.params.app;
 	return mongoose.model('group').find({
 		app: app
 	}, {

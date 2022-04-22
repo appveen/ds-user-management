@@ -398,7 +398,7 @@ e.removeUserBotFromApp = (req, res, isBot, usrIdArray) => {
 	let usrIds = req.body.userIds;
 	usrIds = usrIds ? usrIds : [];
 	usrIds = _.difference(usrIds, usrIdArray);
-	let app = req.swagger.params.app.value;
+	let app = req.params.app;
 	usrIds = _.uniq(usrIds);
 	return mongoose.model('user').find({ _id: { $in: usrIds }, bot: isBot })
 		.then(_usr => {
@@ -453,21 +453,21 @@ e.removeUserBotFromApp = (req, res, isBot, usrIdArray) => {
 
 e.removeUserFromApp = (req, res) => {
 	let usrIds = req.body.userIds;
-	let app = req.swagger.params.app.value;
+	let app = req.params.app;
 	return e.validateUser(req, usrIds, app)
 		.then(diff => e.removeUserBotFromApp(req, res, false, diff.diff));
 };
 
 e.removeBotFromApp = (req, res) => {
 	let usrIds = req.body.userIds;
-	let app = req.swagger.params.app.value;
+	let app = req.params.app;
 	return e.validateUser(req, usrIds, app)
 		.then(diff => e.removeUserBotFromApp(req, res, true, diff.diff));
 };
 
 e.customDestroy = (req, res) => {
 	let txnId = req.get('txnId');
-	let appName = req.swagger.params.id.value;
+	let appName = req.params.id;
 	logger.info(`[${txnId}] App delete request received for ${appName}`);
 
 	if (!req.user.isSuperAdmin) return res.status(403).json({ message: 'Current user does not have permission to delete app' });
@@ -481,7 +481,7 @@ e.customDestroy = (req, res) => {
 			'Authorization': req && req.headers ? req.headers['authorization'] || req.headers['Authorization'] : null
 		},
 		json: true,
-		qs: { filter: { status: { $eq: 'Active' }, 'app': req.swagger.params.id.value }, select: 'name,status,app' }
+		qs: { filter: { status: { $eq: 'Active' }, 'app': req.params.id }, select: 'name,status,app' }
 	};
 	logger.debug(`Options for request : ${JSON.stringify(options)}`);
 
@@ -517,7 +517,7 @@ e.customDestroy = (req, res) => {
 };
 
 e.addUsersToApp = (req, res) => {
-	let app = req.swagger.params.app.value;
+	let app = req.params.app;
 	let users = req.body.users;
 	return mongoose.model('group').findOne({ name: '#', app: app })
 		.then(grp => {
@@ -664,7 +664,7 @@ e.customAppIndex = (_req, _res) => {
 			}]);
 		})
 		.then(_apps => {
-			let filter = _req.swagger.params.filter.value;
+			let filter = _req.query.filter;
 			logger.debug(`Incoming filter :: ${filter}`);
 
 			if (user.isSuperAdmin) return crudder.index(_req, _res);
@@ -684,7 +684,7 @@ e.customAppIndex = (_req, _res) => {
 			else filter['_id'] = { '$in': apps };
 
 			logger.info(`Updated filter :: ${JSON.stringify(filter)}`);
-			_req.swagger.params.filter.value = JSON.stringify(filter);
+			_req.query.filter = JSON.stringify(filter);
 
 			return crudder.index(_req, _res);
 		}).catch(err => {

@@ -146,7 +146,7 @@ e.addUserToApp = (req, res, data) => {
 	} else {
 		body = makeBody(null, req, res, 'APP_USER_ADDED');
 	}
-	body.data.app = req.swagger.params.app.value;
+	body.data.app = req.params.app;
 	body.data.summary = data.bot ? req.user.username || req.user._id + ' imported a new bot ' + data.username : req.user.username || req.user._id + ' imported user ' + data.username;
 	client.publish(queue, JSON.stringify(body.data));
 };
@@ -159,7 +159,7 @@ e.removeUser = (req, res, data) => {
 	} else {
 		body = makeBody(null, req, res, 'APP_USER_REMOVED');
 	}
-	body.data.app = req.swagger.params.app.value;
+	body.data.app = req.params.app;
 	body.data.summary = data.bot ? req.user._id + ' removed bot ' + data.username : req.user._id + ' removed user ' + data.username;
 	client.publish(queue, JSON.stringify(body.data));
 };
